@@ -1,7 +1,11 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <InjectModuleInitializerTool>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\tools\net35\InjectModuleInitializer.exe'))</InjectModuleInitializerTool>
+    <InjectModuleInitializerTFM Condition="'$(MSBuildToolsVersion)' == '3.5'">net35</InjectModuleInitializerTFM>
+    <InjectModuleInitializerTFM Condition="'$(MSBuildToolsVersion)' == '4.0'">net40</InjectModuleInitializerTFM>
+    <InjectModuleInitializerTFM Condition="'$(MSBuildToolsVersion)' >= '4.5'">net45</InjectModuleInitializerTFM>
+    <InjectModuleInitializerTFM Condition="'$(InjectModuleInitializerTFM)' == ''">net35</InjectModuleInitializerTFM>
+    <InjectModuleInitializerTool>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\tools\$(InjectModuleInitializerTFM)\InjectModuleInitializer.exe'))</InjectModuleInitializerTool>
   </PropertyGroup>
 
 </Project>

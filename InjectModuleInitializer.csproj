@@ -4,16 +4,18 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>EinarEgilsson.Utilities.InjectModuleInitializer</RootNamespace>
     <AssemblyName>InjectModuleInitializer</AssemblyName>
-    <TargetFramework>net40</TargetFramework>
+    <TargetFrameworks>net35;net40;net45;netstandard2.0</TargetFrameworks>
     <DefaultItemExcludes>*.binlog;Test\**\*.*;nuget\**\*.*</DefaultItemExcludes>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5105</NoWarn>
 
     <Description>Enables module initialization, as described here: http://einaregilsson.com/module-initializers-in-csharp </Description>
     <Company>Einar Egilsson</Company>
     <Copyright>Copyright © Einar Egilsson 2009-2018</Copyright>
-    
+    <Authors>Anateus</Authors>
+
+    <PackageId>Anateus.$(AssemblyName)</PackageId>
     <PackageTags>module initializer assembly constructor</PackageTags>
     <PackageLicenseUrl>https://github.com/einaregilsson/InjectModuleInitializer/blob/master/license.txt</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/einaregilsson/InjectModuleInitializer</PackageProjectUrl>
@@ -24,19 +26,32 @@
     <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
     <TargetsForTfmSpecificBuildOutput>IncludeCecil</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
+    <PackageReference Include="Mono.Cecil" Version="0.10.0" PrivateAssets="all" />
+  </ItemGroup>
   
-  <ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' ">
     <PackageReference Include="Mono.Cecil" Version="0.11.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="GitInfo" Version="2.2.0" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="InjectModuleInitializer.props" Pack="true" PackagePath="build\$(PackageId).props" />
-    <None Update="InjectModuleInitializer.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
-    <None Update="readme.txt" Pack="true" PackagePath="readme.txt" />
+  <!-- Need to use Include instead of Update attribute on outer build when using
+       multiple TargetFrameworks, because it doesn't include anything by default for the outer build.-->
+  <ItemGroup Condition=" '$(TargetFramework)' == '' ">
+    <None Include="InjectModuleInitializer.props" Pack="true" PackagePath="build\$(PackageId).props" />
+    <None Include="InjectModuleInitializer.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
+    <None Include="readme.txt" Pack="true" PackagePath="readme.txt" />
   </ItemGroup>
 
-  <Target Name="IncludeCecil" BeforeTargets="Pack" DependsOnTargets="ResolveAssemblyReferences">
+  <Target Name="IncludeCecil" DependsOnTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferencePath -&gt; WithMetadataValue('NuGetPackageId', 'Mono.Cecil'))" />
     </ItemGroup>
@@ -62,7 +77,7 @@ AssemblyVersion=$(AssemblyVersion)" />
 
   <!-- '$(ExcludeRestorePackageImports)' == 'true' when invoking /t:Restore -->
   <Target Name="SetVersion"
-          BeforeTargets="GetAssemblyVersion;GetPackageVersion;Pack"
+          BeforeTargets="GetAssemblyVersion;GetPackageVersion;GenerateNuspec;Pack"
           DependsOnTargets="GitVersion"
           Condition="'$(ExcludeRestorePackageImports)' != 'true' and '$(GitInfoImported)' == 'true'">
     <PropertyGroup>
