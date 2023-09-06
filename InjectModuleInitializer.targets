@@ -1,15 +1,15 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <Target Name="InjectModuleInitializer"
-          Inputs="$(TargetPath)"
+          Inputs="@(IntermediateAssembly)"
           Outputs="$(IntermediateOutputPath)$(MSBuildProjectName).moduleinitializer.tmp"
-          AfterTargets="AfterBuild">
+          BeforeTargets="CopyFilesToOutputDirectory">
 
     <PropertyGroup>
       <InjectExtraArgs Condition="'$(AssemblyOriginatorKeyFile)' != '' and '$(SignAssembly)' == 'true'">/k:"$(AssemblyOriginatorKeyFile)"</InjectExtraArgs>
     </PropertyGroup>
 
-    <Exec Command='"$(InjectModuleInitializerTool)" $(InjectExtraArgs) "$(TargetPath)"' />
+    <Exec Command='"$(InjectModuleInitializerTool)" $(InjectExtraArgs) "@(IntermediateAssembly)"' />
 
     <!-- Make sure the incremental build doesn't run this target again -->
     <Touch Files="$(IntermediateOutputPath)$(MSBuildProjectName).moduleinitializer.tmp" AlwaysCreate="true" ForceTouch="true" />
