@@ -30,7 +30,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' ">
     <PackageReference Include="Mono.Cecil" Version="0.10.0" PrivateAssets="all" />
   </ItemGroup>
-  
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' ">
     <PackageReference Include="Mono.Cecil" Version="0.11.4" PrivateAssets="all" />
   </ItemGroup>
@@ -62,7 +62,9 @@
     <CI Condition="'$(CI)' == ''">false</CI>
   </PropertyGroup>
 
-  <Target Name="Version" DependsOnTargets="SetVersion">
+  <!-- This custom entry target requires that PrepareForBuild is executed first, so that all build directories
+       are created, before they are used. -->
+  <Target Name="Version" DependsOnTargets="PrepareForBuildOnCrossTargeting;SetVersion">
     <Message Importance="high" Text="PackageVersion=$(PackageVersion)
 AssemblyVersion=$(AssemblyVersion)" />
     <Message Text="##vso[build.updatebuildnumber]$(PackageVersion)" Importance="high" Condition="'$(TF_BUILD)' == 'true'" />
@@ -74,6 +76,16 @@ AssemblyVersion=$(AssemblyVersion)" />
       <GitCommits>$([MSBuild]::Add('$(GitCommits)', '1'))</GitCommits>
     </PropertyGroup>
   </Target>
+
+  <Target Name="_SetPrepareForBuildInnerTarget" Returns="@(InnerOutput)">
+    <PropertyGroup  Condition="'$(InnerTargets)' == ''">
+      <InnerTargets>PrepareForBuild</InnerTargets>
+    </PropertyGroup>
+  </Target>
+  
+  <Target Name="PrepareForBuildOnCrossTargeting"
+          DependsOnTargets="_SetPrepareForBuildInnerTarget;DispatchToInnerBuilds"
+          Condition="'$(IsCrossTargetingBuild)' == 'true'" />
 
   <!-- '$(ExcludeRestorePackageImports)' == 'true' when invoking /t:Restore -->
   <Target Name="SetVersion"
